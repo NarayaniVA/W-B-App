@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Joke and Quote Cards</title>
+    <style>
+        :root {
+            --background-color-light: #fff;
+            --text-color-light: #000;
+            --background-color-dark: #333;
+            --text-color-dark: #fff;
+            --transition-duration: 0.5s;
+        }
+
+        body {
+            background-color: var(--background-color-light);
+            color: var(--text-color-light);
+            transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease;
+        }
+
+        body.dark-theme {
+            background-color: var(--background-color-dark);
+            color: var(--text-color-dark);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .card-container {
+            perspective: 1000px;
+        }
+
+        .card {
+            width: 350px;
+            height: 250px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+            cursor: pointer;
+            border: 1px solid #333;
+            background-color: var(--background-color-light);
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+        }
+
+        .card-front {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: brown;
+            color: white;
+        }
+
+        .card-back {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: green;
+            color: white;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body>
+    <button id="theme-toggle">Toggle Theme</button>
+    <div id="joke-cards" class="grid"></div>
+    <audio id="flipSound" src="https://pub-7de58e77bbdc477680e9cd9b28c977e3.r2.dev/Rick%20Roll%20Sound%20Effect.mp3" preload="auto"></audio>
+
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        const flipSound = document.getElementById('flipSound');
+        const body = document.body;
+
+        themeToggle.addEventListener('click', () => {
+            if (body.classList.contains('dark-theme')) {
+                body.classList.remove('dark-theme');
+            } else {
+                body.classList.add('dark-theme');
+            }
+        });
+
+        async function fetchJoke() {
+            try {
+                const response = await fetch('https://official-joke-api.appspot.com/jokes/random');
+                const data = await response.json();
+                return data.setup + ' ' + data.punchline;
+            } catch (error) {
+                console.error('Failed to fetch joke:', error);
+                return 'Failed to fetch joke.';
+            }
+        }
+
+        async function fetchQuote() {
+            try {
+                const response = await fetch('https://api.quotable.io/random');
+                const data = await response.json();
+                return data.content;
+            } catch (error) {
+                console.error('Failed to fetch quote:', error);
+                return 'Failed to fetch quote.';
+            }
+        }
+
+        function createCard() {
+            const card = document.createElement('div');
+            card.classList.add('card');
+
+            const cardInner = document.createElement('div');
+            cardInner.classList.add('card-inner');
+
+            const cardFront = document.createElement('div');
+            cardFront.classList.add('card-front');
+
+            const cardBack = document.createElement('div');
+            cardBack.classList.add('card-back');
+
+            let isJokeDisplayed = true;
+
+            const toggleContent = () => {
+                if (isJokeDisplayed) {
+                    fetchJoke().then(joke => {
+                        cardBack.textContent = joke;
+                    });
+                } else {
+                    fetchQuote().then(quote => {
+                        cardFront.textContent = quote;
+                    });
+                }
+                isJokeDisplayed = !isJokeDisplayed;
+
+                flipSound.play(); // Play the sound
+                cardInner.style.transform = isJokeDisplayed ? 'rotateY(0deg)' : 'rotateY(180deg)';
+            };
+
+            card.addEventListener('click', toggleContent);
+            toggleContent();
+
+            cardInner.appendChild(cardFront);
+            cardInner.appendChild(cardBack);
+            card.appendChild(cardInner);
+            document.getElementById('joke-cards').appendChild(card);
+        }
+
+        for (let i = 0; i < 6; i++) {
+            createCard();
+        }
+    </script>
+</body>
+</html>
